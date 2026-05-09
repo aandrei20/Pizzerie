@@ -1,0 +1,72 @@
+const revealItems = document.querySelectorAll(".reveal");
+const menuToggle = document.querySelector(".mobile-menu-toggle");
+const mobileNav = document.querySelector(".mobile-nav");
+const header = document.querySelector(".site-header");
+const navLinks = document.querySelectorAll('.main-nav a[href^="#"], .mobile-nav a[href^="#"]');
+const sections = Array.from(navLinks)
+  .map((link) => document.querySelector(link.getAttribute("href")))
+  .filter(Boolean);
+
+const updateHeader = () => {
+  if (!header) return;
+  header.classList.toggle("is-scrolled", window.scrollY > 24);
+};
+
+const setActiveLink = (id) => {
+  navLinks.forEach((link) => {
+    link.classList.toggle("is-active", link.getAttribute("href") === `#${id}`);
+  });
+};
+
+updateHeader();
+window.addEventListener("scroll", updateHeader, { passive: true });
+
+if ("IntersectionObserver" in window) {
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.16 }
+  );
+
+  revealItems.forEach((item) => revealObserver.observe(item));
+} else {
+  revealItems.forEach((item) => item.classList.add("is-visible"));
+}
+
+if ("IntersectionObserver" in window && sections.length) {
+  const navObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveLink(entry.target.id);
+        }
+      });
+    },
+    { rootMargin: "-42% 0px -48% 0px", threshold: 0 }
+  );
+
+  sections.forEach((section) => navObserver.observe(section));
+}
+
+if (menuToggle && mobileNav) {
+  menuToggle.addEventListener("click", () => {
+    const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+    menuToggle.setAttribute("aria-expanded", String(!isOpen));
+    mobileNav.classList.toggle("is-open", !isOpen);
+    header?.classList.toggle("menu-open", !isOpen);
+  });
+
+  mobileNav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      menuToggle.setAttribute("aria-expanded", "false");
+      mobileNav.classList.remove("is-open");
+      header?.classList.remove("menu-open");
+    });
+  });
+}
