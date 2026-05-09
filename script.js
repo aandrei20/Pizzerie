@@ -55,18 +55,45 @@ if ("IntersectionObserver" in window && sections.length) {
 }
 
 if (menuToggle && mobileNav) {
+  const closeMobileMenu = () => {
+    menuToggle.setAttribute("aria-expanded", "false");
+    mobileNav.classList.remove("is-open");
+    header?.classList.remove("menu-open");
+  };
+
+  const openMobileMenu = () => {
+    menuToggle.setAttribute("aria-expanded", "true");
+    mobileNav.classList.add("is-open");
+    header?.classList.add("menu-open");
+  };
+
   menuToggle.addEventListener("click", () => {
     const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
-    menuToggle.setAttribute("aria-expanded", String(!isOpen));
-    mobileNav.classList.toggle("is-open", !isOpen);
-    header?.classList.toggle("menu-open", !isOpen);
+    if (isOpen) {
+      closeMobileMenu();
+    } else {
+      openMobileMenu();
+    }
   });
 
   mobileNav.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      menuToggle.setAttribute("aria-expanded", "false");
-      mobileNav.classList.remove("is-open");
-      header?.classList.remove("menu-open");
-    });
+    link.addEventListener("click", closeMobileMenu);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeMobileMenu();
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+    const target = event.target;
+
+    if (!isOpen || !(target instanceof Node)) return;
+
+    if (!mobileNav.contains(target) && !menuToggle.contains(target)) {
+      closeMobileMenu();
+    }
   });
 }
