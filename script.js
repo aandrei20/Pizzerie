@@ -3,6 +3,12 @@ const menuToggle = document.querySelector(".mobile-menu-toggle");
 const mobileNav = document.querySelector(".mobile-nav");
 const header = document.querySelector(".site-header");
 const navLinks = document.querySelectorAll('.main-nav a[href^="#"], .mobile-nav a[href^="#"]');
+const statusItems = document.querySelectorAll("[data-open-status]");
+const galleryButtons = document.querySelectorAll("[data-lightbox-src]");
+const lightbox = document.querySelector(".lightbox");
+const lightboxImage = lightbox?.querySelector("img");
+const lightboxCaption = lightbox?.querySelector("p");
+const lightboxClose = lightbox?.querySelector(".lightbox-close");
 const sections = Array.from(navLinks)
   .map((link) => document.querySelector(link.getAttribute("href")))
   .filter(Boolean);
@@ -20,6 +26,37 @@ const setActiveLink = (id) => {
 
 updateHeader();
 window.addEventListener("scroll", updateHeader, { passive: true });
+
+const updateOpenStatus = () => {
+  if (!statusItems.length) return;
+
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const minutesNow = hour * 60 + minute;
+  const opensAt = 11 * 60;
+  const closesAt = 23 * 60;
+  const isOpen = minutesNow >= opensAt && minutesNow < closesAt;
+  const minutesToClose = closesAt - minutesNow;
+  const text = isOpen
+    ? minutesToClose <= 60
+      ? `Deschis acum • închidem în ${minutesToClose} min`
+      : "Deschis acum • comenzi până la 23:00"
+    : "Închis acum • deschidem la 11:00";
+
+  statusItems.forEach((item) => {
+    item.classList.toggle("is-open-now", isOpen);
+    item.classList.toggle("is-closed-now", !isOpen);
+    const dot = item.querySelector(".status-dot");
+    item.textContent = text;
+    if (dot) {
+      item.prepend(dot);
+    }
+  });
+};
+
+updateOpenStatus();
+window.setInterval(updateOpenStatus, 60000);
 
 if ("IntersectionObserver" in window) {
   const revealObserver = new IntersectionObserver(
@@ -94,6 +131,46 @@ if (menuToggle && mobileNav) {
 
     if (!mobileNav.contains(target) && !menuToggle.contains(target)) {
       closeMobileMenu();
+    }
+  });
+}
+
+if (lightbox && lightboxImage && lightboxCaption) {
+  const closeLightbox = () => {
+    lightbox.setAttribute("hidden", "");
+    lightboxImage.src = "";
+    lightboxImage.alt = "";
+    lightboxCaption.textContent = "";
+    document.body.classList.remove("lightbox-open");
+  };
+
+  galleryButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const imageSrc = button.getAttribute("data-lightbox-src");
+      const caption = button.getAttribute("data-lightbox-caption") || "";
+
+      if (!imageSrc) return;
+
+      lightboxImage.src = imageSrc;
+      lightboxImage.alt = caption;
+      lightboxCaption.textContent = caption;
+      lightbox.removeAttribute("hidden");
+      document.body.classList.add("lightbox-open");
+      lightboxClose?.focus();
+    });
+  });
+
+  lightboxClose?.addEventListener("click", closeLightbox);
+
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !lightbox.hasAttribute("hidden")) {
+      closeLightbox();
     }
   });
 }
